@@ -7,11 +7,13 @@ import (
 	"github.com/arriqaaq/rbt"
 	"math"
 	"sync"
+	"sync/atomic"
 )
 
 var (
 	ERR_EMPTY_RING    = errors.New("empty ring")
 	ERR_KEY_NOT_FOUND = errors.New("key not found")
+	ERR_HEAVY_LOAD    = errors.New("servers under heavy load")
 )
 
 type hasher interface {
@@ -45,7 +47,7 @@ func newNode(name string) *node {
 type node struct {
 	name   string
 	active bool
-	load   float64
+	load   int64
 }
 
 func (n *node) Load() {}
@@ -62,7 +64,7 @@ type Ring struct {
 
 	virtualNodes int
 	loadFactor   float64
-	totalLoad    int
+	totalLoad    int64
 
 	mu sync.RWMutex
 }
@@ -88,13 +90,9 @@ func NewRing(nodes []string, cnf *Config) *Ring {
 		r.loadFactor = 1
 	}
 
-	r.mu.Lock()
 	for _, node := range nodes {
-		r.nodeMap[node] = newNode(node)
-		hashKey := r.hash(node)
-		r.store.Insert(hashKey, node)
+		r.Add(node)
 	}
-	r.mu.Unlock()
 
 	return r
 }
@@ -111,9 +109,12 @@ func (r *Ring) Add(node string) {
 		return
 	}
 	r.nodeMap[node] = newNode(node)
+	hashKey := r.hash(node)
+	r.store.Insert(hashKey, node)
 
-	for i := 0; i <= r.virtualNodes; i++ {
+	for i := 0; i < r.virtualNodes; i++ {
 		vNodeKey := fmt.Sprintf("%s-%d", node, i)
+		r.nodeMap[vNodeKey] = newNode(node)
 		hashKey := r.hash(vNodeKey)
 		r.store.Insert(hashKey, node)
 	}
@@ -127,10 +128,14 @@ func (r *Ring) Remove(node string) {
 		return
 	}
 
-	for i := 0; i <= r.virtualNodes; i++ {
+	hashKey := r.hash(node)
+	r.store.Delete(hashKey)
+
+	for i := 0; i < r.virtualNodes; i++ {
 		vNodeKey := fmt.Sprintf("%s-%d", node, i)
 		hashKey := r.hash(vNodeKey)
 		r.store.Delete(hashKey)
+		delete(r.nodeMap, vNodeKey)
 	}
 	delete(r.nodeMap, node)
 }
@@ -148,7 +153,16 @@ func (r *Ring) Get(key string) (string, error) {
 	hashKey := r.hash(key)
 	q = r.store.Nearest(hashKey)
 
+	var count int
+
 	for {
+
+		// Avoid infinite recursion if all the servers are under heavy load
+		// and if user forgot to call the Done() method
+		if count > r.store.Size() {
+			return "", ERR_HEAVY_LOAD
+		}
+
 		if hashKey > q.GetKey() {
 			g := rbt.FindSuccessor(q)
 			if g != nil {
@@ -162,12 +176,16 @@ func (r *Ring) Get(key string) (string, error) {
 		if r.loadOK(q.GetValue()) {
 			break
 		}
+		count++
+
 		h := rbt.FindSuccessor(q)
 		if h == nil {
 			//rewind to start of tree
 			q = r.store.Root()
 		}
 	}
+	atomic.AddInt64(&r.nodeMap[q.GetValue()].load, 1)
+	atomic.AddInt64(&r.totalLoad, 1)
 	return q.GetValue(), nil
 }
 
@@ -178,7 +196,7 @@ func (r *Ring) loadOK(node string) bool {
 	}
 
 	var avgLoadPerNode float64
-	avgLoadPerNode = float64((r.totalLoad + 1) / (len(r.nodeMap)))
+	avgLoadPerNode = float64(int(r.totalLoad+1) / (len(r.nodeMap)))
 	if avgLoadPerNode == 0 {
 		avgLoadPerNode = 1
 	}
@@ -195,4 +213,12 @@ func (r *Ring) loadOK(node string) bool {
 	}
 
 	return false
+}
+
+func (r *Ring) Done(node string) {
+	if _, ok := r.nodeMap[node]; !ok {
+		return
+	}
+	atomic.AddInt64(&r.nodeMap[node].load, -1)
+	atomic.AddInt64(&r.totalLoad, -1)
 }

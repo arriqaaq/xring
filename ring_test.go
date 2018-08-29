@@ -7,7 +7,8 @@ import (
 func TestGet(t *testing.T) {
 	nodes := []string{"a", "b", "c"}
 	cnf := &Config{
-		VirtualNodes: 10,
+		VirtualNodes: 0,
+		LoadFactor:   1,
 	}
 	hashRing := NewRing(nodes, cnf)
 
@@ -32,4 +33,24 @@ func expectNode(t *testing.T, hashRing *Ring, key string, expected string) {
 	if err != nil || node != expected {
 		t.Error("GetNode(", key, ") expected", expected, "but got", node, err)
 	}
+	hashRing.Done(node)
+}
+
+func failNode(t *testing.T, hashRing *Ring, key string, expected string, expectedErr error) {
+	node, err := hashRing.Get(key)
+	if err != expectedErr || node != expected {
+		t.Error("GetNode(", key, ") expected", expected, "but got", node, err)
+	}
+}
+
+func TestHeavyLoad(t *testing.T) {
+	nodes := []string{"a", "b", "c"}
+	cnf := &Config{
+		VirtualNodes: 0,
+		LoadFactor:   1,
+	}
+	hashRing := NewRing(nodes, cnf)
+	failNode(t, hashRing, "test", "a", nil)
+	failNode(t, hashRing, "test", "", ERR_HEAVY_LOAD)
+
 }
