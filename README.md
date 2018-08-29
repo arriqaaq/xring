@@ -6,8 +6,13 @@ Consistent hashing with bounded loads implementation using Red Black Tree
 ## Example Usage
 
 ```go
-ring:=NewRing([]string{"server-1","server-2","server-3"},1)
-node:=ring.Get("foo")
+	nodes := []string{"a", "b", "c"}
+	cnf := &xring.Config{
+		VirtualNodes: 300,
+		LoadFactor:   2,
+	}
+	hashRing := xring.NewRing(nodes, cnf)
+	node,err:=hashRing.Get("foo")
 ```
 
 
