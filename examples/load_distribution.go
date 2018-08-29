@@ -1,9 +1,5 @@
 package main
 
-/*
-	Examples taken from "github.com/buraksezer/consistent"
-*/
-
 import (
 	"fmt"
 	"github.com/arriqaaq/xring"
