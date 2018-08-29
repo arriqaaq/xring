@@ -1,4 +1,4 @@
-# Ringbl [WIP]
+# Ringbl
 A consistent hash ring with bounded loads
 Consistent hashing with bounded loads implementation using Red Black Tree 
 ![ringbl](https://3.bp.blogspot.com/-pgZ4b9H7VlM/WOJ91rDe_XI/AAAAAAAABqw/wIjtyPHheFgyHpXIqY4qNLhd_H9DnHsXACLcB/s640/image00.png)
@@ -18,7 +18,7 @@ Consistent hashing with bounded loads implementation using Red Black Tree
 
 ## TODO
 
-- Test cases
+- Add more test cases
 - Performance test for xxhash
 
 ## Paper
