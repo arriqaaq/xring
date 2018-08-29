@@ -114,7 +114,7 @@ func (r *Ring) Add(node string) {
 
 	for i := 0; i < r.virtualNodes; i++ {
 		vNodeKey := fmt.Sprintf("%s-%d", node, i)
-		r.nodeMap[vNodeKey] = newNode(node)
+		r.nodeMap[vNodeKey] = newNode(vNodeKey)
 		hashKey := r.hash(vNodeKey)
 		r.store.Insert(hashKey, node)
 	}
