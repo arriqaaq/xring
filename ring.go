@@ -186,7 +186,8 @@ func (r *Ring) loadOK(node string) bool {
 
 	vnode, ok := r.nodeMap[node]
 	if !ok {
-		panic(fmt.Sprintf("given host(%s) not in loadsMap", vnode.name))
+		fmt.Printf("given host(%s) not in loadsMap\n", vnode.name)
+		return false
 	}
 
 	if float64(vnode.load)+1 <= avgLoadPerNode {
