@@ -51,6 +51,21 @@ func TestHeavyLoad(t *testing.T) {
 	}
 	hashRing := NewRing(nodes, cnf)
 	failNode(t, hashRing, "test", "a", nil)
+	failNode(t, hashRing, "test", "b", nil)
+	failNode(t, hashRing, "test", "c", nil)
 	failNode(t, hashRing, "test", "", ERR_HEAVY_LOAD)
+
+}
+
+func TestDistribution(t *testing.T) {
+	nodes := []string{"a", "b", "c"}
+	cnf := &Config{
+		VirtualNodes: 0,
+		LoadFactor:   1,
+	}
+	hashRing := NewRing(nodes, cnf)
+	failNode(t, hashRing, "test", "a", nil)
+	failNode(t, hashRing, "test", "b", nil)
+	failNode(t, hashRing, "test", "c", nil)
 
 }

@@ -9,7 +9,7 @@ import (
 func main() {
 	nodes := []string{"a", "b", "c"}
 	cnf := &xring.Config{
-		VirtualNodes: 100,
+		VirtualNodes: 300,
 		LoadFactor:   2,
 	}
 	hashRing := xring.NewRing(nodes, cnf)

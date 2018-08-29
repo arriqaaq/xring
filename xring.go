@@ -159,7 +159,7 @@ func (r *Ring) Get(key string) (string, error) {
 
 		// Avoid infinite recursion if all the servers are under heavy load
 		// and if user forgot to call the Done() method
-		if count > r.store.Size() {
+		if count >= r.store.Size() {
 			return "", ERR_HEAVY_LOAD
 		}
 
@@ -182,6 +182,8 @@ func (r *Ring) Get(key string) (string, error) {
 		if h == nil {
 			//rewind to start of tree
 			q = r.store.Root()
+		} else {
+			q = h
 		}
 	}
 	atomic.AddInt64(&r.nodeMap[q.GetValue()].load, 1)
