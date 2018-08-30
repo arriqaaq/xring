@@ -14,7 +14,8 @@ Consistent hashing with bounded loads implementation using Red Black Tree
 	hashRing := xring.NewRing(nodes, cnf)
 	node,err:=hashRing.Get("foo")
 
-	/*  Call this post execution of any function, else 
+	/*  
+		Call this post execution of any function, else 
 	 	the traffic would be load balanced, and get stuck if
 		all nodes are busy 
 	*/
