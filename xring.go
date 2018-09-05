@@ -181,7 +181,7 @@ func (r *Ring) Get(key string) (string, error) {
 		h := rbt.FindSuccessor(q)
 		if h == nil {
 			//rewind to start of tree
-			q = r.store.Root()
+			q = rbt.FindMinimum(r.store)
 		} else {
 			q = h
 		}
